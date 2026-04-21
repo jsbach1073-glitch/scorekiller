@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Score Killer — 5형식 세션</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: #2a2a3a;
+    --accent: #ff3d3d;
+    --accent2: #ff7b00;
+    --gold: #ffd700;
+    --green: #00e676;
+    --text: #e8e8f0;
+    --muted: #6b6b8a;
+    --correct: #00e676;
+    --wrong: #ff3d3d;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse at 20% 20%, rgba(255,61,61,0.05) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(255,123,0,0.04) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 24px 20px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    padding: 32px 0 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    letter-spacing: 4px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1;
+  }
+
+  .session-badge {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 4px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* Progress bar */
+  .progress-wrap {
+    margin-bottom: 28px;
+  }
+
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .progress-bar {
+    height: 3px;
+    background: var(--surface2);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+
+  /* Part header */
+  .part-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .part-tag {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    padding: 4px 12px;
+    border-radius: 4px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white;
+  }
+
+  .part-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* Card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    opacity: 0.5;
+  }
+
+  .grammar-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent2);
+    background: rgba(255,123,0,0.1);
+    padding: 3px 10px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: 12px;
+    letter-spacing: 1px;
+  }
+
+  .example-box {
+    background: var(--surface2);
+    border-left: 3px solid var(--accent);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  .example-box .ko {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .question-text {
+    font-size: 15px;
+    font-weight: 500;
+    margin-bottom: 16px;
+    line-height: 1.6;
+    color: var(--text);
+  }
+
+  /* Multiple choice */
+  .choices {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .choice-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .choice-btn:hover:not(:disabled) {
+    border-color: var(--accent2);
+    background: rgba(255,123,0,0.05);
+  }
+
+  .choice-btn.correct {
+    border-color: var(--correct);
+    background: rgba(0,230,118,0.08);
+    color: var(--correct);
+  }
+
+  .choice-btn.wrong {
+    border-color: var(--wrong);
+    background: rgba(255,61,61,0.08);
+    color: var(--wrong);
+  }
+
+  .choice-btn:disabled { cursor: not-allowed; }
+
+  .choice-num {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  /* Feedback box */
+  .feedback-box {
+    margin-top: 12px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    display: none;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .feedback-box.correct {
+    background: rgba(0,230,118,0.08);
+    border: 1px solid rgba(0,230,118,0.3);
+    color: var(--correct);
+  }
+
+  .feedback-box.wrong {
+    background: rgba(255,61,61,0.08);
+    border: 1px solid rgba(255,61,61,0.3);
+    color: var(--wrong);
+  }
+
+  .feedback-box.info {
+    background: rgba(255,215,0,0.06);
+    border: 1px solid rgba(255,215,0,0.2);
+    color: var(--gold);
+  }
+
+  /* Hint box */
+  .hint-box {
+    background: var(--surface2);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .hint-box span { color: var(--accent2); }
+
+  /* Mic button */
+  .mic-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .mic-btn:hover { border-color: var(--accent); }
+
+  .mic-btn.recording {
+    border-color: var(--accent);
+    background: rgba(255,61,61,0.08);
+    animation: pulse 1.5s infinite;
+  }
+
+  .mic-btn.success {
+    border-color: var(--correct);
+    background: rgba(0,230,118,0.08);
+    color: var(--correct);
+  }
+
+  .mic-icon { font-size: 20px; }
+
+  .transcript-box {
+    margin-top: 10px;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+    min-height: 40px;
+    display: none;
+  }
+
+  /* Next button */
+  .next-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 12px;
+    display: none;
+  }
+
+  .next-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  .next-btn.visible { display: block; }
+
+  /* PART 2 sentence */
+  .training-sentence {
+    margin-bottom: 16px;
+  }
+
+  .sentence-num {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+
+  .ko-sentence {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+
+  .answer-reveal {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    color: var(--correct);
+    display: none;
+    margin-top: 6px;
+    padding: 8px 12px;
+    background: rgba(0,230,118,0.06);
+    border-radius: 6px;
+  }
+
+  /* PART 3 - AI section */
+  .examiner-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .examiner-label {
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+  }
+
+  .examiner-q {
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  /* AI Result */
+  .ai-result {
+    display: none;
+    margin-top: 16px;
+    animation: fadeIn 0.4s ease;
+  }
+
+  .ai-block {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 10px;
+  }
+
+  .ai-block-label {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .ai-block-content {
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .band-display {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .band-item {
+    text-align: center;
+  }
+
+  .band-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    line-height: 1;
+  }
+
+  .band-num.before { color: var(--wrong); }
+  .band-num.after { color: var(--correct); }
+
+  .band-label {
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .band-arrow {
+    font-size: 24px;
+    color: var(--accent2);
+  }
+
+  .band-comment {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+
+  /* Loading */
+  .loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .dots span {
+    animation: blink 1.4s infinite;
+    font-size: 20px;
+    color: var(--accent);
+  }
+  .dots span:nth-child(2) { animation-delay: 0.2s; }
+  .dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  /* Section divider */
+  .section-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 28px 0;
+  }
+
+  /* Complete screen */
+  .complete-screen {
+    display: none;
+    text-align: center;
+    padding: 60px 20px;
+    animation: fadeIn 0.5s ease;
+  }
+
+  .complete-icon { font-size: 60px; margin-bottom: 16px; }
+
+  .complete-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    letter-spacing: 3px;
+    background: linear-gradient(135deg, var(--gold), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 12px;
+  }
+
+  .complete-sub {
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .restart-btn {
+    margin-top: 32px;
+    padding: 14px 40px;
+    border-radius: 10px;
+    border: 1px solid var(--accent);
+    background: transparent;
+    color: var(--accent);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .restart-btn:hover {
+    background: var(--accent);
+    color: white;
+  }
+
+  /* Animations */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,61,61,0.3); }
+    50% { box-shadow: 0 0 0 8px rgba(255,61,61,0); }
+  }
+
+  @keyframes blink {
+    0%, 80%, 100% { opacity: 0; }
+    40% { opacity: 1; }
+  }
+
+  .bold-pattern { font-weight: 700; color: var(--accent2); }
+
+  /* API key input */
+  .api-setup {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .api-setup label {
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .api-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .api-input:focus { border-color: var(--accent2); }
+  .api-input::placeholder { color: var(--muted); }
+
+  .api-note {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">SCORE KILLER</div>
+    <div class="session-badge">SESSION 03 · 5형식</div>
+  </div>
+
+  <!-- API Setup -->
+  <div id="apiSetup" style="display:none">
+    <input type="hidden" id="apiKey" value="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" />
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span id="progressLabel">PART 1 / 3</span>
+      <span id="progressPct">0%</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- ===== PART 1 ===== -->
+  <div id="part1">
+    <div class="part-header">
+      <div class="part-tag">PART 1</div>
+      <div class="part-title">문법체크 — Grammar Recognition</div>
+    </div>
+
+    <div class="card">
+      <div class="grammar-tag">2-9-1 · 5형식 목적격 보어</div>
+      <div class="example-box">
+        My parents <strong>want me to be</strong> a doctor.
+        <div class="ko">나의 부모님은 내가 의사가 되기를 원하신다.</div>
+      </div>
+
+      <div class="question-text">선생님은 우리에게 조용히 하라고 말씀하셨어요.</div>
+
+      <div class="choices" id="choices">
+        <button class="choice-btn" onclick="checkAnswer(this, false)">
+          <span class="choice-num">①</span>
+          The teacher told us <em>being</em> quiet.
+        </button>
+        <button class="choice-btn" onclick="checkAnswer(this, true)">
+          <span class="choice-num">②</span>
+          The teacher told us <em>to be</em> quiet.
+        </button>
+        <button class="choice-btn" onclick="checkAnswer(this, false)">
+          <span class="choice-num">③</span>
+          The teacher told us <em>be</em> quiet.
+        </button>
+        <button class="choice-btn" onclick="checkAnswer(this, false)">
+          <span class="choice-num">④</span>
+          The teacher told us <em>to being</em> quiet.
+        </button>
+      </div>
+
+      <div class="feedback-box" id="p1Feedback"></div>
+    </div>
+
+    <!-- Speaking task -->
+    <div class="card" id="p1SpeakCard" style="display:none">
+      <div class="grammar-tag">★ 영작 말하기 인식</div>
+      <div class="question-text">나는 네가 나를 도와주기를 기대한다.</div>
+      <div class="hint-box">힌트: <span>expect</span> · <span>you</span> · <span>help</span> · <span>me</span></div>
+
+      <button class="mic-btn" id="p1MicBtn" onclick="startSpeech('p1', 'I expect you to help me')">
+        <span class="mic-icon">🎙️</span> 말하기 시작
+      </button>
+      <div class="transcript-box" id="p1Transcript"></div>
+      <div class="feedback-box" id="p1SpeakFeedback"></div>
+
+      <button class="next-btn" id="p1Next" onclick="goToPart2()">NEXT → PART 2</button>
+    </div>
+  </div>
+
+  <!-- ===== PART 2 ===== -->
+  <div id="part2" style="display:none">
+    <hr class="section-divider">
+    <div class="part-header">
+      <div class="part-tag">PART 2</div>
+      <div class="part-title">IELTS 실전 영작 스피킹 연습</div>
+    </div>
+
+    <div class="card">
+      <div class="examiner-label">Examiner Question</div>
+      <div class="examiner-q">How has your family influenced your career choice?<br>
+        <small style="color:var(--muted);font-size:13px">가족이 당신의 직업 선택에 어떤 영향을 주었나요?</small>
+      </div>
+    </div>
+
+    <!-- Set 1 -->
+    <div class="card">
+      <div class="training-sentence">
+        <div class="sentence-num">훈련 문장 1/3</div>
+        <div class="ko-sentence">나의 부모님은 내가 행복한 삶을 살기를 원하십니다.</div>
+        <div class="hint-box">힌트: <span>My parents</span> / <span>want</span> / <span>me</span> / <span>lead</span> / <span>a happy life</span></div>
+      </div>
+      <button class="mic-btn" id="p2Mic1" onclick="startSpeech('p2s1', 'My parents want me to lead a happy life')">
+        <span class="mic-icon">🎙️</span> 말하기
+      </button>
+      <div class="transcript-box" id="p2s1Transcript"></div>
+      <div class="answer-reveal" id="p2s1Answer">✅ My parents <strong>want me to lead</strong> a happy life.</div>
+      <div class="feedback-box" id="p2s1Feedback"></div>
+    </div>
+
+    <!-- Set 2 -->
+    <div class="card" id="p2card2" style="opacity:0.4;pointer-events:none">
+      <div class="training-sentence">
+        <div class="sentence-num">훈련 문장 2/3</div>
+        <div class="ko-sentence">그분들은 내가 새로운 것들을 시도하도록 항상 허락해 주시죠.</div>
+        <div class="hint-box">힌트: <span>They</span> / <span>always</span> / <span>allow</span> / <span>me</span> / <span>try</span> / <span>new things</span></div>
+      </div>
+      <button class="mic-btn" id="p2Mic2" onclick="startSpeech('p2s2', 'They always allow me to try new things')">
+        <span class="mic-icon">🎙️</span> 말하기
+      </button>
+      <div class="transcript-box" id="p2s2Transcript"></div>
+      <div class="answer-reveal" id="p2s2Answer">✅ They always <strong>allow me to try</strong> new things.</div>
+      <div class="feedback-box" id="p2s2Feedback"></div>
+    </div>
+
+    <!-- Set 3 -->
+    <div class="card" id="p2card3" style="opacity:0.4;pointer-events:none">
+      <div class="training-sentence">
+        <div class="sentence-num">훈련 문장 3/3</div>
+        <div class="ko-sentence">그래서 나는 그들이 나의 성공을 기대하기를 바랍니다.</div>
+        <div class="hint-box">힌트: <span>Therefore</span> / <span>expect</span> / <span>them</span> / <span>look forward to</span> / <span>my success</span></div>
+      </div>
+      <button class="mic-btn" id="p2Mic3" onclick="startSpeech('p2s3', 'Therefore I expect them to look forward to my success')">
+        <span class="mic-icon">🎙️</span> 말하기
+      </button>
+      <div class="transcript-box" id="p2s3Transcript"></div>
+      <div class="answer-reveal" id="p2s3Answer">✅ Therefore, I <strong>expect them to look forward to</strong> my success.</div>
+      <div class="feedback-box" id="p2s3Feedback"></div>
+    </div>
+
+    <button class="next-btn" id="p2Next" onclick="goToPart3()">NEXT → PART 3</button>
+  </div>
+
+  <!-- ===== PART 3 ===== -->
+  <div id="part3" style="display:none">
+    <hr class="section-divider">
+    <div class="part-header">
+      <div class="part-tag">PART 3</div>
+      <div class="part-title">AI 교정 엔진 — Free Speaking</div>
+    </div>
+
+    <div class="card" style="border-color:rgba(255,61,61,0.3)">
+      <div class="grammar-tag" style="color:var(--accent);background:rgba(255,61,61,0.1)">⚡ AI 교정 활성화 · want/allow/expect + 목적어 + to-v</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:16px">자유롭게 답하세요. Score Killer 엔진이 5형식 패턴을 주입하여 Band 7.0+으로 업그레이드합니다.</div>
+
+      <div class="examiner-box">
+        <div class="examiner-label">🎙 Examiner</div>
+        <div class="examiner-q">Who is the most influential person in your life?</div>
+      </div>
+
+      <button class="mic-btn" id="p3MicBtn" onclick="startP3Speech()">
+        <span class="mic-icon">🎙️</span> 자유롭게 답변하기
+      </button>
+      <div class="transcript-box" id="p3Transcript" style="display:block;margin-top:10px;min-height:50px">
+        <span style="color:var(--muted);font-size:12px">여기에 인식된 답변이 표시됩니다...</span>
+      </div>
+
+      <button class="mic-btn" id="p3SubmitBtn" onclick="submitToAI()" style="display:none;margin-top:8px;border-color:var(--accent);background:rgba(255,61,61,0.08)">
+        <span class="mic-icon">🚀</span> Score Killer 엔진 실행
+      </button>
+
+      <!-- AI Result -->
+      <div class="ai-result" id="aiResult">
+        <div class="ai-block">
+          <div class="ai-block-label">📝 Original Answer</div>
+          <div class="ai-block-content" id="originalAnswer"></div>
+        </div>
+
+        <div class="ai-block">
+          <div class="ai-block-label">🎯 Your Band Score</div>
+          <div class="band-display">
+            <div class="band-item">
+              <div class="band-num before" id="bandBefore">-</div>
+              <div class="band-label">Before</div>
+            </div>
+            <div class="band-arrow">→</div>
+            <div class="band-item">
+              <div class="band-num after">7.0+</div>
+              <div class="band-label">After</div>
+            </div>
+          </div>
+          <div class="band-comment" id="bandComment"></div>
+        </div>
+
+        <div class="ai-block">
+          <div class="ai-block-label">🚀 Killer Correction</div>
+          <div class="ai-block-content" id="killerCorrection"></div>
+        </div>
+
+        <div class="ai-block">
+          <div class="ai-block-label">💡 One-Point Lesson</div>
+          <div class="ai-block-content" id="onePointLesson"></div>
+        </div>
+      </div>
+
+      <div class="loading" id="loadingIndicator" style="display:none">
+        <div class="dots"><span>●</span><span>●</span><span>●</span></div>
+        <span>Score Killer 엔진 분석 중...</span>
+      </div>
+    </div>
+
+    <button class="next-btn visible" id="p3Complete" onclick="showComplete()" style="display:none">
+      🏆 세션 완료
+    </button>
+  </div>
+
+  <!-- Complete -->
+  <div class="complete-screen" id="completeScreen">
+    <div class="complete-icon">🏆</div>
+    <div class="complete-title">SESSION COMPLETE</div>
+    <div class="complete-sub">
+      5형식 패턴 훈련 완료!<br>
+      <strong>want / allow / expect + 목적어 + to-v</strong><br><br>
+      이 패턴 하나로 당신의 Band가 달라집니다.
+    </div>
+    <button class="restart-btn" onclick="restartSession()">↺ 다시 훈련하기</button>
+  </div>
+
+</div>
+
+<script>
+// =================== STATE ===================
+let p2Progress = 0;
+let p3UserAnswer = '';
+let recognition = null;
+let currentMicTarget = null;
+
+// =================== PROGRESS ===================
+function updateProgress(pct, label) {
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = pct + '%';
+  document.getElementById('progressLabel').textContent = label;
+}
+
+// =================== PART 1: MULTIPLE CHOICE ===================
+function checkAnswer(btn, isCorrect) {
+  const btns = document.querySelectorAll('.choice-btn');
+  btns.forEach(b => b.disabled = true);
+
+  const feedback = document.getElementById('p1Feedback');
+
+  if (isCorrect) {
+    btn.classList.add('correct');
+    feedback.className = 'feedback-box correct';
+    feedback.style.display = 'block';
+    feedback.textContent = '✅ 정답! told + 목적어 + to-v — 5형식의 핵심 패턴입니다.';
+    setTimeout(() => {
+      document.getElementById('p1SpeakCard').style.display = 'block';
+      updateProgress(15, 'PART 1 / 3');
+    }, 800);
+  } else {
+    btn.classList.add('wrong');
+    feedback.className = 'feedback-box wrong';
+    feedback.style.display = 'block';
+    feedback.innerHTML = '❌ 틀렸어요! 정답은 <strong>②</strong> — told us <strong>to be</strong> quiet.<br>5형식: 동사 + 목적어 + <strong>to-v</strong>';
+    setTimeout(() => {
+      document.getElementById('p1SpeakCard').style.display = 'block';
+      updateProgress(15, 'PART 1 / 3');
+    }, 1200);
+  }
+}
+
+// =================== SPEECH RECOGNITION ===================
+function startSpeech(target, expectedAnswer) {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    // Fallback for browsers without speech recognition
+    simulateSpeech(target, expectedAnswer);
+    return;
+  }
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SpeechRecognition();
+  recognition.lang = 'en-US';
+  recognition.continuous = false;
+  recognition.interimResults = true;
+
+  const micId = getMicId(target);
+  const transcriptId = getTranscriptId(target);
+  const micBtn = document.getElementById(micId);
+
+  micBtn.classList.add('recording');
+  micBtn.innerHTML = '<span class="mic-icon">⏹️</span> 인식 중...';
+
+  const transcriptBox = document.getElementById(transcriptId);
+  transcriptBox.style.display = 'block';
+  transcriptBox.textContent = '듣고 있어요...';
+
+  recognition.onresult = (e) => {
+    let interim = '';
+    let final = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) final += e.results[i][0].transcript;
+      else interim += e.results[i][0].transcript;
+    }
+    transcriptBox.textContent = final || interim;
+    if (final) {
+      processSpeechResult(target, final, expectedAnswer, micBtn);
+    }
+  };
+
+  recognition.onerror = () => {
+    micBtn.classList.remove('recording');
+    micBtn.innerHTML = '<span class="mic-icon">🎙️</span> 다시 말하기';
+    transcriptBox.textContent = '인식 실패. 다시 시도해주세요.';
+  };
+
+  recognition.onend = () => {
+    micBtn.classList.remove('recording');
+  };
+
+  recognition.start();
+}
+
+function getMicId(target) {
+  const map = { p1: 'p1MicBtn', p2s1: 'p2Mic1', p2s2: 'p2Mic2', p2s3: 'p2Mic3' };
+  return map[target];
+}
+
+function getTranscriptId(target) {
+  const map = { p1: 'p1Transcript', p2s1: 'p2s1Transcript', p2s2: 'p2s2Transcript', p2s3: 'p2s3Transcript' };
+  return map[target];
+}
+
+function processSpeechResult(target, spoken, expected, micBtn) {
+  const normalize = s => s.toLowerCase().replace(/[.,!?]/g, '').trim();
+  const isCorrect = normalize(spoken).includes(normalize(expected).substring(0, 15));
+
+  micBtn.classList.remove('recording');
+
+  if (target === 'p1') {
+    const feedback = document.getElementById('p1SpeakFeedback');
+    if (isCorrect) {
+      micBtn.classList.add('success');
+      micBtn.innerHTML = '<span class="mic-icon">✅</span> 완벽해요!';
+      feedback.className = 'feedback-box correct';
+      feedback.style.display = 'block';
+      feedback.textContent = '✅ I expect you to help me — 완벽합니다!';
+      document.getElementById('p1Next').classList.add('visible');
+    } else {
+      micBtn.innerHTML = '<span class="mic-icon">🎙️</span> 다시 말하기';
+      feedback.className = 'feedback-box wrong';
+      feedback.style.display = 'block';
+      feedback.innerHTML = '❌ 정답: <strong>I expect you to help me</strong><br>따라 말해보세요: expect + you + to + help';
+      setTimeout(() => document.getElementById('p1Next').classList.add('visible'), 1500);
+    }
+  } else if (target.startsWith('p2')) {
+    handleP2Result(target, spoken, expected, micBtn, isCorrect);
+  }
+}
+
+function simulateSpeech(target, expectedAnswer) {
+  // Demo mode for browsers without speech API
+  const transcriptId = getTranscriptId(target);
+  const micId = getMicId(target);
+  const micBtn = document.getElementById(micId);
+
+  micBtn.classList.add('recording');
+  micBtn.innerHTML = '<span class="mic-icon">⏹️</span> 시뮬레이션 중...';
+
+  const transcriptBox = document.getElementById(transcriptId);
+  transcriptBox.style.display = 'block';
+
+  setTimeout(() => {
+    transcriptBox.textContent = expectedAnswer;
+    processSpeechResult(target, expectedAnswer, expectedAnswer, micBtn);
+  }, 1500);
+}
+
+// =================== PART 2 ===================
+function handleP2Result(target, spoken, expected, micBtn, isCorrect) {
+  const num = parseInt(target.replace('p2s', ''));
+  const feedbackEl = document.getElementById(`p2s${num}Feedback`);
+  const answerEl = document.getElementById(`p2s${num}Answer`);
+
+  if (isCorrect) {
+    micBtn.classList.add('success');
+    micBtn.innerHTML = '<span class="mic-icon">✅</span> 훌륭해요!';
+    feedbackEl.className = 'feedback-box correct';
+    feedbackEl.style.display = 'block';
+    feedbackEl.textContent = '✅ 완벽한 5형식 문장입니다!';
+    answerEl.style.display = 'block';
+    unlockNextP2(num);
+  } else {
+    micBtn.innerHTML = '<span class="mic-icon">🎙️</span> 다시 말하기';
+    feedbackEl.className = 'feedback-box wrong';
+    feedbackEl.style.display = 'block';
+    answerEl.style.display = 'block';
+    feedbackEl.textContent = '❌ 정답을 확인하고 따라 말해보세요.';
+    setTimeout(() => unlockNextP2(num), 2000);
+  }
+}
+
+function unlockNextP2(num) {
+  p2Progress = Math.max(p2Progress, num);
+  updateProgress(33 + (num * 11), 'PART 2 / 3');
+
+  if (num < 3) {
+    const nextCard = document.getElementById(`p2card${num + 1}`);
+    if (nextCard) {
+      nextCard.style.opacity = '1';
+      nextCard.style.pointerEvents = 'auto';
+    }
+  } else {
+    document.getElementById('p2Next').classList.add('visible');
+    updateProgress(66, 'PART 2 / 3');
+  }
+}
+
+// =================== NAVIGATION ===================
+function goToPart2() {
+  document.getElementById('part2').style.display = 'block';
+  document.getElementById('part2').scrollIntoView({ behavior: 'smooth' });
+  updateProgress(33, 'PART 2 / 3');
+}
+
+function goToPart3() {
+  document.getElementById('part3').style.display = 'block';
+  document.getElementById('part3').scrollIntoView({ behavior: 'smooth' });
+  updateProgress(66, 'PART 3 / 3');
+}
+
+// =================== PART 3: AI ===================
+function startP3Speech() {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    // Demo fallback
+    const demoAnswer = "My father is important. He say me study hard. I want make him happy.";
+    document.getElementById('p3Transcript').textContent = demoAnswer;
+    p3UserAnswer = demoAnswer;
+    document.getElementById('p3SubmitBtn').style.display = 'flex';
+    return;
+  }
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const recog = new SpeechRecognition();
+  recog.lang = 'en-US';
+  recog.continuous = false;
+  recog.interimResults = true;
+
+  const micBtn = document.getElementById('p3MicBtn');
+  micBtn.classList.add('recording');
+  micBtn.innerHTML = '<span class="mic-icon">⏹️</span> 듣고 있어요...';
+
+  const transcriptBox = document.getElementById('p3Transcript');
+  transcriptBox.textContent = '';
+
+  recog.onresult = (e) => {
+    let text = '';
+    for (let i = 0; i < e.results.length; i++) {
+      text += e.results[i][0].transcript;
+    }
+    transcriptBox.textContent = text;
+    if (e.results[e.results.length - 1].isFinal) {
+      p3UserAnswer = text;
+    }
+  };
+
+  recog.onend = () => {
+    micBtn.classList.remove('recording');
+    micBtn.innerHTML = '<span class="mic-icon">🎙️</span> 다시 말하기';
+    if (p3UserAnswer) {
+      document.getElementById('p3SubmitBtn').style.display = 'flex';
+    }
+  };
+
+  recog.start();
+}
+
+async function submitToAI() {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const userAnswer = p3UserAnswer || document.getElementById('p3Transcript').textContent;
+
+  if (!userAnswer || userAnswer.includes('여기에 인식된')) {
+    alert('먼저 답변을 말해주세요!');
+    return;
+  }
+
+  document.getElementById('p3SubmitBtn').style.display = 'none';
+  document.getElementById('loadingIndicator').style.display = 'flex';
+
+  const prompt = `# Role: IELTS Score Killer Engine
+
+# Context:
+사용자가 제공한 [문법 조건]을 반드시 활용하여, [문제 내용]에 대한 [사용자 대답]을 IELTS Band 7.0+ 수준으로 업그레이드하라.
+
+# Rules:
+1. 사용자가 엉터리로 말했더라도, [문법 조건]의 패턴을 모두 사용하여 문맥에 맞는 세련된 문장으로 재구성한다.
+2. [문법 조건]의 패턴은 결과물에서 반드시 **Bold(굵게)** 처리한다.
+3. 답변은 하나의 완성된 고득점 문단으로 만든다.
+4. Band Score는 (문법, 어휘, 유창성)을 기준으로 엄격하게 산출한다.
+
+# Format Rules:
+반드시 아래 JSON 형식으로만 응답하라. 다른 텍스트 일절 금지.
+{
+  "bandBefore": "4.5",
+  "bandComment": "한 줄 평 (한국어)",
+  "killerCorrection": "교정된 영어 문장 (**Bold** 처리 포함)",
+  "onePointLesson": "핵심 설명 (한국어)"
+}
+
+### [Data Input]
+(1) 문법 조건: 5형식 — want/allow/expect + 목적어 + to-v
+(2) 문제 내용: Who is the most influential person in your life?
+(3) 사용자 대답: ${userAnswer}`;
+
+  try {
+    let result;
+
+    if (apiKey) {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          max_tokens: 1000,
+          messages: [
+            { role: 'system', content: '너는 IELTS Score Killer Engine이다. 반드시 JSON 형식으로만 응답해라. 다른 텍스트 일절 금지.' },
+            { role: 'user', content: prompt }
+          ]
+        })
+      });
+      const data = await response.json();
+      const text = data.choices[0].message.content;
+      result = JSON.parse(text.replace(/```json|```/g, '').trim());
+    } else {
+      // Demo result
+      await new Promise(r => setTimeout(r, 1500));
+      result = {
+        bandBefore: "4.5",
+        bandComment: "5형식 목적격 보어(to-v) 누락 및 동사 활용 오류",
+        killerCorrection: "The most influential person in my life is my father. He always **wants me to study hard** to achieve my dreams. He **allows me to make** my own decisions, which has shaped who I am today. I truly **expect him to be** proud of my achievements someday.",
+        onePointLesson: "'He say me'처럼 단순히 나열하는 대신, **want/allow/expect + 목적어 + to-v** 패턴을 쓰면 인과관계가 명확해지고 Band 점수가 즉시 올라갑니다. 이 패턴 하나만으로 면접관은 당신을 7.0+ 레벨로 인식합니다."
+      };
+    }
+
+    displayAIResult(result, userAnswer);
+
+  } catch (err) {
+    document.getElementById('loadingIndicator').style.display = 'none';
+    document.getElementById('p3SubmitBtn').style.display = 'flex';
+    alert('오류가 발생했습니다. API Key를 확인하거나 데모 모드로 다시 시도하세요.\n' + err.message);
+  }
+}
+
+function displayAIResult(result, originalText) {
+  document.getElementById('loadingIndicator').style.display = 'none';
+
+  document.getElementById('originalAnswer').textContent = originalText;
+  document.getElementById('bandBefore').textContent = result.bandBefore;
+  document.getElementById('bandComment').textContent = result.bandComment;
+  document.getElementById('killerCorrection').innerHTML = result.killerCorrection.replace(/\*\*(.*?)\*\*/g, '<strong class="bold-pattern">$1</strong>');
+  document.getElementById('onePointLesson').innerHTML = result.onePointLesson.replace(/\*\*(.*?)\*\*/g, '<strong class="bold-pattern">$1</strong>');
+
+  document.getElementById('aiResult').style.display = 'block';
+  document.getElementById('p3Complete').style.display = 'block';
+  document.getElementById('p3Complete').classList.add('visible');
+  updateProgress(100, 'COMPLETE ✓');
+
+  document.getElementById('aiResult').scrollIntoView({ behavior: 'smooth' });
+}
+
+// =================== COMPLETE ===================
+function showComplete() {
+  document.getElementById('completeScreen').style.display = 'block';
+  document.getElementById('completeScreen').scrollIntoView({ behavior: 'smooth' });
+}
+
+function restartSession() {
+  location.reload();
+}
+</script>
+</body>
+</html>
