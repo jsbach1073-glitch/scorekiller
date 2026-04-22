@@ -26,7 +26,7 @@ Respond with this exact JSON format:
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+        'Authorization': 'Bearer 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'
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
