@@ -624,8 +624,10 @@
   </div>
 
   <!-- API Setup -->
-  <div id="apiSetup" style="display:none">
-    <input type="hidden" id="apiKey" value="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" />
+  <div class="api-setup" id="apiSetup">
+    <label>OpenAI API Key</label>
+    <input type="password" class="api-input" id="apiKey" placeholder="sk-proj-..." />
+    <div class="api-note">* 이 키는 브라우저에만 저장되며 외부로 전송되지 않습니다.</div>
   </div>
 
   <!-- Progress -->
@@ -1130,14 +1132,29 @@ async function submitToAI() {
   try {
     let result;
 
-    if (true) {
-      const response = await fetch('/api/correct', {
+    if (apiKey) {
+      const prompt = `You are an IELTS Score Killer Engine. Respond ONLY with a valid JSON object.
+Grammar condition: 5형식 — want/allow/expect + object + to-v
+Question: Who is the most influential person in your life?
+Student answer: ${userAnswer}
+Respond with this exact JSON: {"bandBefore":"4.5","bandComment":"한 줄 평","killerCorrection":"**bold patterns**","onePointLesson":"설명"}`;
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userAnswer })
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + apiKey
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          max_tokens: 1000,
+          response_format: { type: 'json_object' },
+          messages: [{ role: 'user', content: prompt }]
+        })
       });
-      result = await response.json();
-      if (result.error) throw new Error(result.error);
+      const data = await response.json();
+      if (data.error) throw new Error(data.error.message);
+      result = JSON.parse(data.choices[0].message.content);
     } else {
       // Demo result
       await new Promise(r => setTimeout(r, 1500));
